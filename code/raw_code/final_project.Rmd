@@ -22,7 +22,7 @@ library(ggthemes)
 library(knitr)
 
 ## set working directory
-knitr::opts_knit$set(root.dir = '/cloud/project')
+knitr::opts_knit$set(root.dir = '/cloud/project/final_project')
 ```
 
 ### The Data
@@ -60,12 +60,16 @@ atus.all <- atus.sum %>%
 
 ```{r initial-exploration}
 ### Add Code Here
+#str(atus.all)
+#summary(atus.all)
+
+mean(atus.all$t120101)
 ```
 
 
 ```{r creating-childcare-var}
 atus.all <- atus.all %>% 
-    mutate(CHILDCARE = )
+    mutate(CHILDCARE = across(starts_with("t0301"), mean))
 ```
 
 ```{r childcare-density-plot}
