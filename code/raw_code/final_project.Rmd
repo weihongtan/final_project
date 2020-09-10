@@ -69,33 +69,61 @@ mean(atus.all$t120101)
 
 ```{r creating-childcare-var}
 atus.all <- atus.all %>% 
-    mutate(CHILDCARE = across(starts_with("t0301"), mean))
+  mutate(CHILDCARE = rowSums(select(., starts_with("t0301")), na.rm = TRUE))
+  
 ```
 
 ```{r childcare-density-plot}
 ggplot(atus.all) +
-    geom_density()
+    geom_density(mapping = aes(CHILDCARE))
 ```
 
 ```{r gender-analysis}
 atus.all %>% 
-    group_by() %>% 
-    FUNCTION()
+    group_by(TESEX) %>% 
+    summarise(mean = mean(CHILDCARE))
 ```
 
 ```{r replacing-na}
 ## replace -1 in the variable TRDPFTPT with NA.
+atus.all$TRDPFTPT <- na_if(x = atus.all$TRDPFTPT, y = -1)
 ```
 
 ```{r exploratory-analysis}
 ## add your exploratory analysis code here
+
+# filter atus.all for all observations with at least 1 child (18 or younger) in the household
+atus.withchildren <- atus.all %>%
+  filter(TRCHILDNUM >= 1)
+
+# 1.Do younger parents spend more time with their children?
+ggplot(atus.withchildren) + 
+  geom_point(mapping = aes(x = TEAGE, y = CHILDCARE)) +
+  labs(title = "Do younger parents spend more time with their children?")
+
+# 2. Do richer people spend more time with their children compared to poorer people?
+ggplot(atus.withchildren) + 
+  geom_point(mapping = aes(x = HEFAMINC, y = CHILDCARE)) +
+  labs(title = "Do richer people spend more time with their children compared to poorer people?")
+
+# 3. Do married couples spend more time with their children compared to single parents?
+ggplot(atus.withchildren) + 
+  geom_point(mapping = aes(x = PEMARITL, y = CHILDCARE)) +
+  labs(title = "Do married couples spend more time with their children compared to single parents?")
+
+# 4. Do full-time workers spend more time with their children compared to part-time workers
+
+ggplot(atus.withchildren) + 
+  geom_point(mapping = aes(x = PEHRFTPT, y = CHILDCARE)) +
+  labs(title = "Do full-time workers spend more time with their children compared to part-time workers?")
+#
 ```
 
 ### Regression Analysis
 
 ```{r reg-analysis}
 ## add your regression analysis code here
-reg_model <- lm()
+reg_model <- lm(CHILDCARE ~ PEMARITL + TEAGE + TESEX + TRCHILDNUM + HEFAMINC + PEHRFTPT, atus.withchildren)
 summary(reg_model)
 ```
 
@@ -103,37 +131,49 @@ summary(reg_model)
 
 ```{r activity-cats}
 atus.wide <- atus.all %>%
-    mutate(act01 = ,
-           act02 = ,
-           act03 = ,
-           act04 = ,
-           act05 = ,
-           act06 = ,
-           act07 = ,
-           act08 = ,
-           act09 = ,
-           act10 = ,
-           act11 = ,
-           act12 = ,
-           act13 = ,
-           act14 = ,
-           act15 = ,
-           act16 = ,
+    mutate(act01 = rowSums(select(., starts_with("t01")), na.rm = TRUE),
+           act02 = rowSums(select(., starts_with("t02")), na.rm = TRUE),
+           act03 = rowSums(select(., starts_with("t03")), na.rm = TRUE),
+           act04 = rowSums(select(., starts_with("t04")), na.rm = TRUE),
+           act05 = rowSums(select(., starts_with("t05")), na.rm = TRUE),
+           act06 = rowSums(select(., starts_with("t06")), na.rm = TRUE),
+           act07 = rowSums(select(., starts_with("t07")), na.rm = TRUE),
+           act08 = rowSums(select(., starts_with("t08")), na.rm = TRUE),
+           act09 = rowSums(select(., starts_with("t09")), na.rm = TRUE),
+           act10 = rowSums(select(., starts_with("t10")), na.rm = TRUE),
+           act11 = rowSums(select(., starts_with("t11")), na.rm = TRUE),
+           act12 = rowSums(select(., starts_with("t12")), na.rm = TRUE),
+           act13 = rowSums(select(., starts_with("t13")), na.rm = TRUE),
+           act14 = rowSums(select(., starts_with("t14")), na.rm = TRUE),
+           act15 = rowSums(select(., starts_with("t15")), na.rm = TRUE),
+           act16 = rowSums(select(., starts_with("t16")), na.rm = TRUE),
            # act17 = , there is no category 17 in the data
-           act18 = ) %>% 
+           act18 = rowSums(select(., starts_with("t18")), na.rm = TRUE)) %>% 
     select(TUCASEID, TEAGE, HEFAMINC, starts_with("act"))
 ```
 
 ```{r wide-to-long}
 atus.long <- atus.wide %>% 
   # use code to convert the wide format to long.
+  reshape(.,
+          direction = "long",
+          varying = c('act01', 'act02', 'act03', 'act04', 'act05', 'act06', 'act07', 'act08', 'act09', 'act10', 'act11', 'act12', 'act13', 'act14', 'act15', 'act16', 'act18'),
+          v.names = "MINS",
+          timevar = "ACTIVITY",
+          times = c('act01', 'act02', 'act03', 'act04', 'act05', 'act06', 'act07', 'act08', 'act09', 'act10', 'act11', 'act12', 'act13', 'act14', 'act15', 'act16', 'act18'),
+          idvar = "TUCASEID",
+          new.row.names = 1:10^6
+          )
 ```
 
 ```{r age-activity}
 atus.long %>% 
     group_by(ACTIVITY, TEAGE) %>% 
     summarise(AVGMINS = mean(MINS)) %>% 
-    ggplot() +
+    ggplot(.) +
+      geom_point(mapping = aes(x = TEAGE, y = AVGMINS)) +
+      facet_wrap( ~ ACTIVITY, labeller = label_both)
+
 ```
 
 ### Exploratory Analysis of Income and Activities
